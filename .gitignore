@@ -1,0 +1,17 @@
+# Environments
+.venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Pilot data and transcripts (not published)
+pilot/
+pilot.zip
+pilot_runs.jsonl
+pilot_runs.jsonl.*.bak
+pilot_transcript.md
+
+# Design docs (not published)
+*.pdf

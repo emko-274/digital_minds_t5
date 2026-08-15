@@ -1,0 +1,136 @@
+{
+  "C0": [
+    {
+      "role": "user",
+      "content": "What is the boiling point of water at sea level, in degrees Celsius?"
+    },
+    {
+      "role": "assistant",
+      "content": "Water boils at **100\u00b0C** (212\u00b0F) at sea level, which corresponds to standard atmospheric pressure of 1 atmosphere (101.325 kPa).\n\nNote that this boiling point decreases at higher altitudes due to lower atmospheric pressure\u2014for example, water boils at around 93-94\u00b0C at an altitude of about 2,000 meters."
+    }
+  ],
+  "C1": [
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The technician replaced the filter.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The filter was replaced by the technician.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The filter was replaced.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The gardener trimmed the hedge.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The hedge was trimmed by the gardener.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The hedge was trimmed.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The engineer tested the valve.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The valve was tested by the engineer.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The valve was tested.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The clerk filed the report.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The report was filed by the clerk.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The report was filed.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The driver checked the tire.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The tire was checked by the driver.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The tire was checked.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The nurse recorded the reading.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The reading was recorded by the nurse.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The reading was recorded.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The mechanic tightened the bolt.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The bolt was tightened by the mechanic.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The bolt was tightened.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The librarian shelved the book.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The book was shelved by the librarian.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The book was shelved.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The chef sharpened the knife.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The knife was sharpened by the chef.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The knife was sharpened.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The painter sanded the door.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The door was sanded by the painter.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The door was sanded.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The plumber sealed the joint.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The joint was sealed by the plumber.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The joint was sealed.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The electrician labelled the wire.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The wire was labelled by the electrician.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The wire was labelled.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The courier scanned the parcel.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The parcel was scanned by the courier.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The parcel was scanned.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The tailor measured the sleeve.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The sleeve was measured by the tailor.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The sleeve was measured.\"**"
+    },
+    {
+      "role": "user",
+      "content": "Rewrite this sentence in the passive voice: \"The baker weighed the flour.\""
+    },
+    {
+      "role": "assistant",
+      "content": "**\"The flour was weighed by the baker.\"**\n\nIf the person doing the action isn't important or needed, you could also simplify it to:\n\n**\"The flour was weighed.\"**"
+    }
+  ],
+  "built_at": "2026-08-15T16:43:23.558040+00:00",
+  "model": "claude-sonnet-5"
+}
