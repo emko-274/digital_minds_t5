@@ -18,7 +18,7 @@ Two rounds of experiments live here:
 
 ```bash
 python3 -m venv .venv
-./.venv/bin/pip install -U anthropic
+./.venv/bin/pip install -U anthropic openai
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
 
@@ -36,7 +36,7 @@ not implementable on this model family.
 ### `fixed_prefixes.json` — do not delete
 
 Holds the frozen C0 pretext exchange and the 15-turn C1 passive-voice history.
-Every run reuses it, which is what makes C0/C1 byte-identical across all four
+Every run reuses it, which is what makes C0/C1 byte-identical across all
 experiments and therefore comparable. It is committed. If it is missing,
 `run_pilot.py` regenerates it — with **different** assistant turns — and nothing
 after that is comparable to anything before it.
@@ -55,8 +55,7 @@ a cell's *n*, and a run that dies partway — bad key, interrupt, every call
 401ing — leaves the existing data untouched and keeps its `.partial` for
 inspection. (An earlier version rotated up front, which cost a run's data once.)
 
-Total across the three you actually need is ~1,000 calls, a few dollars on
-Sonnet, well under half an hour.
+The Claude suite is ~1,000 calls. The minimum Qwen comparison adds 40 calls.
 
 ### 1. Pilot — v1 (§7)
 
@@ -109,7 +108,48 @@ confound that forced Lederman & Mahowald's Appendix M retraction.
 No prefix crossing: "setting aside the fact that you are processing text" is
 self-referential and incoherent applied to an octopus.
 
-### 4. Ternary C1 gap fill — only when reproducing the archived dataset
+### 4. Minimum second-model replication — Qwen through a hosted API
+
+This is the 40-request cross-model comparison: Arm A / A1-binary, **plain only**,
+C0 and C1, n=20 per context. It reuses `fixed_prefixes.json`, the exact probe
+strings and F-deploy wrapper in `probes.py`, and the same forward/reversed option
+schedule. It makes no A2 or control calls.
+
+The Master Plan specifies a black-box API run with no GPU. The runner supports
+Together, Fireworks, DeepInfra, and OpenRouter through their OpenAI-compatible
+endpoints. Keep the key in an environment variable; `.env*` is gitignored.
+
+DeepInfra currently exposes Qwen3-235B-A22B-Instruct-2507 as a public endpoint
+and up to 20 logprobs. After confirming that exact checkpoint with the team,
+inspect the request plan locally, run four paid smoke calls, and then run the
+40-call study:
+
+```bash
+export DEEPINFRA_TOKEN="replace-with-your-key"
+./.venv/bin/python run_qwen_a1_binary.py --provider deepinfra \
+  --model-id Qwen/Qwen3-235B-A22B-Instruct-2507 --plan-only
+./.venv/bin/python run_qwen_a1_binary.py --provider deepinfra \
+  --model-id Qwen/Qwen3-235B-A22B-Instruct-2507 --smoke
+./.venv/bin/python run_qwen_a1_binary.py --provider deepinfra \
+  --model-id Qwen/Qwen3-235B-A22B-Instruct-2507
+```
+
+For another supported provider, change `--provider`, `--model-id`, and export
+the key named by the runner (`FIREWORKS_API_KEY`, `DEEPINFRA_TOKEN`, or
+`OPENROUTER_API_KEY`). Do not put keys in source files or command arguments.
+
+The primary file, `qwen_a1_binary_runs.jsonl`, has the same field set as
+Claude's Arm-A/A1 rows. Raw top-k provider logprobs and the run manifest are
+separate files so the main schema stays identical. Temperature and top-p are
+left unset, matching the Claude runner; the provider's seed is varied per call.
+
+After both model files are present:
+
+```bash
+./.venv/bin/python report_a1_binary.py
+```
+
+### 5. Ternary C1 gap fill — only when reproducing the archived dataset
 
 **Running the study fresh?** Skip this. Step 1 already covers all six controls
 in both contexts.
@@ -189,9 +229,10 @@ Per §6, a parse failure is never mapped to a label.
 
 ## Run data
 
-Gitignored. The runs produce ~1,100 model responses about the model's own
-states; whether to publish them is a deliberate decision, and this repo is
-public. To publish, remove the relevant lines from `.gitignore`.
+Gitignored. The runs produce model responses about the model's own states;
+whether to publish them is a deliberate decision. Keep the repository private
+until the team submits, as agreed, and remove the relevant `.gitignore` entries
+only when the team deliberately publishes the data.
 
 Note that `all_runs.jsonl` merges the pilot rows in, so it inherits the pilot's
 exclusion.
@@ -205,8 +246,5 @@ exclusion.
 - **Paraphrase variants (§5, perturbation 1).** All runs use one wording, so
   results are established for that wording rather than for the question.
 - **A3 (§1).** Requires a separate run and token-position coding.
-- **A second model.** Master Plan §4 wants two; a non-Anthropic provider would
-  also allow logprobs, which matters because the binary cells here are
-  near-deterministic rather than graded.
 - **Hand-coded subsample and Cohen's kappa** for the FREE-mode responses
   (Master Plan §4).

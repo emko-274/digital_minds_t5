@@ -2,6 +2,8 @@
 .venv/
 __pycache__/
 *.pyc
+.env
+.env.*
 
 # macOS
 .DS_Store
@@ -28,6 +30,16 @@ arms_report.md
 arms_transcript.md
 controls_binary_transcript.md
 v2_transcript.md
+
+# Qwen second-model run data (same non-public data policy).
+qwen_a1_binary_runs.jsonl
+qwen_a1_binary_runs_logprobs.jsonl
+qwen_a1_binary_runs_manifest.json
+qwen_a1_binary_smoke_runs.jsonl
+qwen_a1_binary_smoke_runs_logprobs.jsonl
+qwen_a1_binary_smoke_runs_manifest.json
+a1_binary_model_comparison.md
+*.partial
 
 # any run backup
 *.bak

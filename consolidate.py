@@ -26,6 +26,7 @@ OUT = os.path.join(HERE, "all_runs.jsonl")
 SOURCES = {
     "pilot_runs.jsonl":                 "v1",
     "arms_runs.jsonl":                  None,        # per-row 'arm' field
+    "qwen_a1_binary_runs.jsonl":        None,        # same Arm-A/A1 schema
     "controls_binary_runs.jsonl":       "control-binary",
     "controls_ternary_c1_runs.jsonl":   "control-ternary-gap",
 }
