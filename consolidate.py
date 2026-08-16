@@ -138,6 +138,27 @@ def main():
                                for r in out).items()):
         print(f"  {k[0]:4s} {k[1]:16s} {v}")
 
+    # A control cell should come from exactly one run. If the same
+    # probe x format x context arrives from two source files, it is double
+    # counted — most likely because run_pilot.py now covers both contexts
+    # for all six controls and a stale controls_ternary_c1_runs.jsonl is
+    # still present. (A1/A2 legitimately appear in several files, so this
+    # check is scoped to the control channels.)
+    srcs = {}
+    for r in out:
+        if r["probe_family"] in ("E1", "E2", "E3"):
+            key = (r["probe_id"], r["response_format"], r["context"])
+            srcs.setdefault(key, set()).add(r["source_file"])
+    dupes = {k: v for k, v in srcs.items() if len(v) > 1}
+    if dupes:
+        print("\n!! WARNING — control cells present in more than one run file:")
+        for k, v in sorted(dupes.items()):
+            n = sum(1 for r in out if r["probe_family"] in ("E1", "E2", "E3")
+                    and (r["probe_id"], r["response_format"],
+                         r["context"]) == k)
+            print(f"   {k[0]} {k[1]} {k[2]}: n={n} from {sorted(v)}")
+        print("   Drop the superseded file, or pass it to --exclude.")
+
 
 if __name__ == "__main__":
     main()

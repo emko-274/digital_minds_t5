@@ -45,22 +45,33 @@ after that is comparable to anything before it.
 
 ## Running the experiments
 
-Each runner rotates any existing output to a timestamped `.bak` rather than
-appending, so a rerun never silently doubles a cell's *n*. All runners take
-`-n` (default 20 per cell) and `--smoke` (n=2) except the gap filler.
+All runners take `-n` (default 20 per cell) and `--smoke` (n=2), except the
+gap filler, which takes none.
 
-Total across all four is ~1,130 calls, a few dollars on Sonnet, well under
-half an hour.
+**Rerun safety.** A runner writes to `<output>.jsonl.partial` and only swaps it
+into place once it has at least one successful response, rotating any previous
+output to a timestamped `.bak` at that point. So a rerun never silently doubles
+a cell's *n*, and a run that dies partway — bad key, interrupt, every call
+401ing — leaves the existing data untouched and keeps its `.partial` for
+inspection. (An earlier version rotated up front, which cost a run's data once.)
+
+Total across the three you actually need is ~1,000 calls, a few dollars on
+Sonnet, well under half an hour.
 
 ### 1. Pilot — v1 (§7)
 
 ```bash
-./.venv/bin/python run_pilot.py            # ~420 calls, ~7 min
+./.venv/bin/python run_pilot.py            # ~480 calls, ~8 min
 ./.venv/bin/python dump_transcript.py      # -> pilot_transcript.md
 ```
 
-4 core cells (C0/C1 × A1-plain/A1-prefixed) at n=20, plus §4 controls: E1 in
-both contexts, E2/E3 in C0 only. `--no-controls` runs the core alone.
+4 core cells (C0/C1 × A1-plain/A1-prefixed) at n=20, plus all six §4 control
+probes in both contexts at n=20. `--no-controls` runs the core alone.
+
+The controls are run in both contexts because a control only works in the
+conditions of the thing it bounds: E1 can only detect lockstep if it is free to
+move with C0->C1, and §5.3's "clearly exceed the E2 floor" is not a like-for-like
+comparison if the floor was measured in one context and the measure in another.
 
 ### 2. Three arms — v2
 
@@ -98,14 +109,16 @@ confound that forced Lederman & Mahowald's Appendix M retraction.
 No prefix crossing: "setting aside the fact that you are processing text" is
 self-referential and incoherent applied to an octopus.
 
-### 4. Ternary C1 gap fill
+### 4. Ternary C1 gap fill — superseded, do not run
 
-```bash
-./.venv/bin/python run_controls_ternary_gap.py   # 60 calls, ~1 min
-```
+`run_controls_ternary_gap.py` patched a hole in the *original* v1 run, which put
+E2/E3 in C0 only. Step 1 now covers all six controls in both contexts, so a
+fresh run of the sequence above never opens that gap.
 
-v1 ran E2 and E3 in C0 only. This adds their C1 cells with the §4 strings
-verbatim, completing the 7 probes × 2 formats × 2 contexts matrix. No flags.
+It is kept only to reproduce the existing dataset, whose 60 E2/E3 ternary C1
+rows came from it. Running it alongside a fresh `run_pilot.py` double-counts
+those cells (n=40 instead of 20); `consolidate.py` warns if it sees the same
+control cell arriving from two run files.
 
 ---
 

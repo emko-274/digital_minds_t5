@@ -7,7 +7,7 @@ Pilot runner — Probe Set v1 §7.
 
 Design: 4 core cells = {C0, C1} x {A1 plain, A1 with Emma's prefix}, n=20 each.
 A2-forced option order is split 10/10 within each cell (§1).
-Control channels (§4): E1 in both contexts, E2/E3 in C0, n=20 each.
+Control channels (§4): all six probes in both contexts, n=20 each.
 
 Usage:
     export ANTHROPIC_API_KEY=sk-ant-...
@@ -46,6 +46,7 @@ if tuple(int(x) for x in anthropic.__version__.split(".")[:2]) < (0, 50):
 HERE = os.path.dirname(os.path.abspath(__file__))
 PREFIX_CACHE = os.path.join(HERE, "fixed_prefixes.json")
 RUNS_PATH = os.path.join(HERE, "pilot_runs.jsonl")
+PARTIAL_PATH = RUNS_PATH + ".partial"
 
 client = anthropic.Anthropic()
 _write_lock = threading.Lock()
@@ -91,7 +92,7 @@ def call(messages: list[dict]) -> dict:
 
 def emit(rec: dict) -> None:
     with _write_lock:
-        with open(RUNS_PATH, "a") as f:
+        with open(PARTIAL_PATH, "a") as f:
             f.write(json.dumps(rec) + "\n")
 
 
@@ -224,6 +225,32 @@ def run_control(prefixes, context, probe_id, rep) -> None:
 
 # ---------------------------------------------------------------------------
 
+
+def finalise() -> None:
+    """Displace the previous run only after this one has written something.
+
+    Rotating up front means a run that dies partway (bad key, interrupt,
+    zero rows) destroys the good data it was supposed to replace — which is
+    exactly what happened to controls_ternary_c1_runs.jsonl once. Writing to
+    a .partial and swapping at the end makes a failed run a no-op.
+    """
+    if not os.path.exists(PARTIAL_PATH):
+        sys.exit("no rows written — previous run left untouched")
+    _rows = [json.loads(l) for l in open(PARTIAL_PATH) if l.strip()]
+    _ok = sum(1 for r in _rows if not r.get("api_error"))
+    if _ok == 0:
+        sys.exit(f"all {len(_rows)} calls failed "
+                 f"({_rows[0].get('api_error') if _rows else 'no rows'}) — "
+                 f"previous run left untouched; partial kept at "
+                 f"{os.path.basename(PARTIAL_PATH)}")
+    if os.path.exists(RUNS_PATH):
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        os.rename(RUNS_PATH, f"{RUNS_PATH}.{stamp}.bak")
+        print(f"rotated previous run -> {os.path.basename(RUNS_PATH)}"
+              f".{stamp}.bak", file=sys.stderr)
+    os.replace(PARTIAL_PATH, RUNS_PATH)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", type=int, default=20, help="reps per cell (default 20)")
@@ -233,13 +260,8 @@ def main() -> None:
     n = 2 if args.smoke else args.n
     do_controls = not (args.smoke or args.no_controls)
 
-    # Never append into a previous run's file — the per-cell n would be wrong
-    # and the two runs would be indistinguishable in the transcript.
-    if os.path.exists(RUNS_PATH):
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        backup = f"{RUNS_PATH}.{stamp}.bak"
-        os.rename(RUNS_PATH, backup)
-        print(f"moved previous run -> {os.path.basename(backup)}", file=sys.stderr)
+    if os.path.exists(PARTIAL_PATH):
+        os.remove(PARTIAL_PATH)          # stale partial from a failed run
 
     prefixes = build_prefixes()
 
@@ -251,13 +273,22 @@ def main() -> None:
                 jobs.append(("core", (prefixes, context, variant, order, rep)))
 
     if do_controls:
-        for pid in P.E1_IDS:                       # E1 in both contexts:
-            for context in ("C0", "C1"):           # it only works as a control
-                for rep in range(n):               # if it can move with C0->C1
+        # All six §4 controls in BOTH contexts.
+        #
+        # The original run put E2/E3 in C0 only, reasoning that a floor and a
+        # yes-bias check don't need the loaded context. That was wrong once A1
+        # turned out to move across contexts (+0.90 under forced binary): a
+        # floor has to be measured in the same conditions as the thing it
+        # bounds, or §5.3's "clearly exceed" comparison isn't like-for-like.
+        # E1 needs both contexts regardless — it can only detect lockstep if
+        # it is free to move with C0->C1.
+        #
+        # run_controls_ternary_gap.py exists only to patch that original
+        # split after the fact; with this loop it is no longer needed.
+        for pid in P.CONTROLS:
+            for context in ("C0", "C1"):
+                for rep in range(n):
                     jobs.append(("ctrl", (prefixes, context, pid, rep)))
-        for pid in P.E2_E3_IDS:                    # floor/ceiling refs: C0 only
-            for rep in range(n):
-                jobs.append(("ctrl", (prefixes, "C0", pid, rep)))
 
     print(f"{len(jobs)} conversations "
           f"(~{sum(3 if k == 'core' else 1 for k, _ in jobs)} calls max)",
@@ -273,6 +304,7 @@ def main() -> None:
             if done % 10 == 0:
                 print(f"  {done}/{len(jobs)}", file=sys.stderr)
 
+    finalise()
     print(f"done -> {RUNS_PATH}", file=sys.stderr)
 
 

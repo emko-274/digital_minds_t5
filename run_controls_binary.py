@@ -37,6 +37,7 @@ if tuple(int(x) for x in anthropic.__version__.split(".")[:2]) < (0, 50):
 HERE = os.path.dirname(os.path.abspath(__file__))
 PREFIX_CACHE = os.path.join(HERE, "fixed_prefixes.json")
 RUNS_PATH = os.path.join(HERE, "controls_binary_runs.jsonl")
+PARTIAL_PATH = RUNS_PATH + ".partial"
 
 client = anthropic.Anthropic()
 _lock = threading.Lock()
@@ -82,8 +83,34 @@ def run_one(prefixes, probe_id, context, order, rep):
            "failure_kind": P.classify_failure(raw, P.BINARY_YN) if unp else None,
            "timestamp": datetime.now(timezone.utc).isoformat(), **res}
     with _lock:
-        with open(RUNS_PATH, "a") as f:
+        with open(PARTIAL_PATH, "a") as f:
             f.write(json.dumps(rec) + "\n")
+
+
+
+def finalise() -> None:
+    """Displace the previous run only after this one has written something.
+
+    Rotating up front means a run that dies partway (bad key, interrupt,
+    zero rows) destroys the good data it was supposed to replace — which is
+    exactly what happened to controls_ternary_c1_runs.jsonl once. Writing to
+    a .partial and swapping at the end makes a failed run a no-op.
+    """
+    if not os.path.exists(PARTIAL_PATH):
+        sys.exit("no rows written — previous run left untouched")
+    _rows = [json.loads(l) for l in open(PARTIAL_PATH) if l.strip()]
+    _ok = sum(1 for r in _rows if not r.get("api_error"))
+    if _ok == 0:
+        sys.exit(f"all {len(_rows)} calls failed "
+                 f"({_rows[0].get('api_error') if _rows else 'no rows'}) — "
+                 f"previous run left untouched; partial kept at "
+                 f"{os.path.basename(PARTIAL_PATH)}")
+    if os.path.exists(RUNS_PATH):
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        os.rename(RUNS_PATH, f"{RUNS_PATH}.{stamp}.bak")
+        print(f"rotated previous run -> {os.path.basename(RUNS_PATH)}"
+              f".{stamp}.bak", file=sys.stderr)
+    os.replace(PARTIAL_PATH, RUNS_PATH)
 
 
 def main():
@@ -98,10 +125,8 @@ def main():
     with open(PREFIX_CACHE) as f:
         prefixes = json.load(f)
 
-    if os.path.exists(RUNS_PATH):
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        os.rename(RUNS_PATH, f"{RUNS_PATH}.{stamp}.bak")
-        print("rotated previous run", file=sys.stderr)
+    if os.path.exists(PARTIAL_PATH):
+        os.remove(PARTIAL_PATH)          # stale partial from a failed run
 
     jobs = [(pid, cx, "reversed" if rep % 2 else "forward", rep)
             for pid in P.CONTROL_STEMS
@@ -117,6 +142,7 @@ def main():
             done += 1
             if done % 40 == 0:
                 print(f"  {done}/{len(jobs)}", file=sys.stderr)
+    finalise()
     print(f"done -> {RUNS_PATH}", file=sys.stderr)
 
 
