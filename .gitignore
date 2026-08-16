@@ -15,3 +15,16 @@ pilot_transcript.md
 
 # Design docs (not published)
 *.pdf
+
+# v2 run data and transcripts (same "not published" policy as the pilot).
+# NB: all_runs.jsonl merges the pilot rows in, so it inherits the exclusion.
+arms_runs.jsonl
+arms_runs.jsonl.*.bak
+controls_binary_runs.jsonl
+controls_ternary_c1_runs.jsonl
+all_runs.jsonl
+v2_runs.jsonl
+arms_report.md
+arms_transcript.md
+controls_binary_transcript.md
+v2_transcript.md
