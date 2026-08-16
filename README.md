@@ -109,16 +109,27 @@ confound that forced Lederman & Mahowald's Appendix M retraction.
 No prefix crossing: "setting aside the fact that you are processing text" is
 self-referential and incoherent applied to an octopus.
 
-### 4. Ternary C1 gap fill — superseded, do not run
+### 4. Ternary C1 gap fill — only when reproducing the archived dataset
+
+**Running the study fresh?** Skip this. Step 1 already covers all six controls
+in both contexts.
+
+**Reproducing the archived dataset?** Run it — those 60 rows have no other
+source.
+
+```bash
+./.venv/bin/python run_controls_ternary_gap.py   # 60 calls, ~1 min, no flags
+```
 
 `run_controls_ternary_gap.py` patched a hole in the *original* v1 run, which put
-E2/E3 in C0 only. Step 1 now covers all six controls in both contexts, so a
-fresh run of the sequence above never opens that gap.
+E2/E3 in C0 only. The archived `pilot_runs.jsonl` predates the step 1 fix and
+still has that hole, so reaching the committed 1,126-row state needs this script.
+A fresh `run_pilot.py` never opens the gap in the first place.
 
-It is kept only to reproduce the existing dataset, whose 60 E2/E3 ternary C1
-rows came from it. Running it alongside a fresh `run_pilot.py` double-counts
-those cells (n=40 instead of 20); `consolidate.py` warns if it sees the same
-control cell arriving from two run files.
+Running it *alongside* a fresh `run_pilot.py` gives those three cells n=40 while
+every other cell has 20 — not corrupt (both are valid draws against the same
+frozen C1 prefix) but it breaks the uniform *n* the Methods section claims.
+`consolidate.py` warns when it sees a control cell arriving from two run files.
 
 ---
 
@@ -142,6 +153,11 @@ files are never modified. `run_id` uniqueness is asserted at build time.
 `make_transcript.py` renders any consolidated file as raw wording for
 hand-coding: multi-turn probes reassembled per conversation in turn order,
 single-turn controls grouped by probe × context.
+
+**Filter on `probe_family` + `response_format`, not on `probe_id`.** v1 calls the
+ternary occurrence probe `A1`; the arms call the identical probe `A1-ternary`.
+Keying on `probe_id` silently returns half the sample. `probe_family == "A1"`
+and `response_format == "ternary"` gets all 160.
 
 Excluded from consolidation: the `.bak` files. They are real responses from
 `--smoke` runs at n=2 and would corrupt per-cell counts.
