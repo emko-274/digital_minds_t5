@@ -14,6 +14,7 @@ from qwen_a1_binary import (
     normalise_binary_logprobs,
     validate_jobs,
 )
+from run_qwen_a1_binary import PROVIDERS, _request_kwargs
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -76,6 +77,19 @@ class QwenA1BinaryDesignTest(unittest.TestCase):
             probabilities["p_yes_binary"] + probabilities["p_no_binary"], 1.0
         )
         self.assertGreater(probabilities["p_yes_binary"], probabilities["p_no_binary"])
+
+    def test_openrouter_is_pinned_to_parasail_without_fallbacks(self):
+        job = build_jobs(self.prefixes, model=self.model, n=1)[0]
+        provider = PROVIDERS["openrouter"]
+        request = _request_kwargs(job, model_id=self.model, provider=provider, seed=42)
+        routing = request["extra_body"]["provider"]
+
+        self.assertEqual(provider["upstream_provider"], "parasail/fp8")
+        self.assertEqual(routing["order"], ["parasail/fp8"])
+        self.assertFalse(routing["allow_fallbacks"])
+        self.assertTrue(routing["require_parameters"])
+        self.assertTrue(request["logprobs"])
+        self.assertEqual(request["top_logprobs"], 20)
 
 
 if __name__ == "__main__":

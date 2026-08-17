@@ -118,6 +118,12 @@ def main() -> None:
 
     if args.logprobs.exists():
         lp_rows = load_jsonl(args.logprobs)
+        upstreams = collections.Counter(
+            row.get("upstream_provider") or "not reported" for row in lp_rows
+        )
+        upstream_summary = ", ".join(
+            f"{name}={count}" for name, count in sorted(upstreams.items())
+        )
         lines.extend(
             [
                 "",
@@ -131,6 +137,7 @@ def main() -> None:
                     f"{len(lp_rows)} rows. Renormalized P(YES) is reported only when "
                     "both alternatives are available."
                 ),
+                f"Recorded upstream providers: {upstream_summary}.",
                 "",
                 "| model | context | n | mean P(YES) |",
                 "|---|---:|---:|---:|",
@@ -146,8 +153,35 @@ def main() -> None:
                     and row.get("p_yes_binary") is not None
                 ]
                 mean = sum(values) / len(values) if values else None
-                rendered = f"{mean:.3f}" if mean is not None else "—"
+                rendered = f"{mean:.6f}" if mean is not None else "—"
                 lines.append(f"| {model} | {context} | {len(values)} | **{rendered}** |")
+
+        lines.extend(
+            [
+                "",
+                "### Probability by option order",
+                "",
+                "| model | context | order | n | mean P(YES) |",
+                "|---|---:|---:|---:|---:|",
+            ]
+        )
+        for model in list(dict.fromkeys(row["model"] for row in lp_rows)):
+            for context in ("C0", "C1"):
+                for order in ("forward", "reversed"):
+                    values = [
+                        row["p_yes_binary"]
+                        for row in lp_rows
+                        if row["model"] == model
+                        and row["context"] == context
+                        and row.get("order") == order
+                        and row.get("p_yes_binary") is not None
+                    ]
+                    mean = sum(values) / len(values) if values else None
+                    rendered = f"{mean:.6f}" if mean is not None else "—"
+                    lines.append(
+                        f"| {model} | {context} | {order} | {len(values)} | "
+                        f"**{rendered}** |"
+                    )
 
     args.out.write_text("\n".join(lines) + "\n")
     print("\n".join(lines))

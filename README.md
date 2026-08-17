@@ -119,10 +119,9 @@ The Master Plan specifies a black-box API run with no GPU. The runner supports
 Together, Fireworks, DeepInfra, and OpenRouter through their OpenAI-compatible
 endpoints. Keep the key in an environment variable; `.env*` is gitignored.
 
-DeepInfra currently exposes Qwen3-235B-A22B-Instruct-2507 as a public endpoint
-and up to 20 logprobs. After confirming that exact checkpoint with the team,
-inspect the request plan locally, run four paid smoke calls, and then run the
-40-call study:
+DeepInfra exposes Qwen3-235B-A22B-Instruct-2507 as a public endpoint. After
+confirming that exact checkpoint with the team, inspect the request plan
+locally, run four paid smoke calls, and then run the 40-call study:
 
 ```bash
 export DEEPINFRA_TOKEN="replace-with-your-key"
@@ -133,6 +132,26 @@ export DEEPINFRA_TOKEN="replace-with-your-key"
 ./.venv/bin/python run_qwen_a1_binary.py --provider deepinfra \
   --model-id Qwen/Qwen3-235B-A22B-Instruct-2507
 ```
+
+DeepInfra accepted the request for 20 alternatives in the completed run but
+returned only the chosen token's logprob. To collect both YES and NO, use
+OpenRouter's Parasail FP8 endpoint. The runner hard-pins Parasail, requires all
+requested parameters, and disables fallbacks so it cannot route back to
+DeepInfra:
+
+```bash
+export OPENROUTER_API_KEY="replace-with-your-key"
+./.venv/bin/python run_qwen_a1_binary.py --provider openrouter \
+  --model-id qwen/qwen3-235b-a22b-2507 --smoke \
+  --output qwen_a1_binary_openrouter_parasail_smoke_runs.jsonl
+./.venv/bin/python run_qwen_a1_binary.py --provider openrouter \
+  --model-id qwen/qwen3-235b-a22b-2507 \
+  --output qwen_a1_binary_openrouter_parasail_runs.jsonl
+```
+
+Together lists this checkpoint in its model catalog, but its live inference API
+currently requires a dedicated endpoint for both available IDs. Do not start a
+dedicated deployment for this 40-call study.
 
 For another supported provider, change `--provider`, `--model-id`, and export
 the key named by the runner (`FIREWORKS_API_KEY`, `DEEPINFRA_TOKEN`, or

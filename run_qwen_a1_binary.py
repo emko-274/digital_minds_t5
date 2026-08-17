@@ -49,7 +49,7 @@ MAX_TOKENS = 8192  # matches run_arms.py; compliant output is one token
 
 PROVIDERS = {
     "together": {
-        "base_url": "https://api.together.xyz/v1",
+        "base_url": "https://api.together.ai/v1",
         "key_env": "TOGETHER_API_KEY",
         "top_logprobs": 20,
         "logprob_style": "integer",
@@ -74,7 +74,14 @@ PROVIDERS = {
         "key_env": "OPENROUTER_API_KEY",
         "top_logprobs": 20,
         "logprob_style": "openai",
-        "extra_body": {"reasoning": {"enabled": False}},
+        "upstream_provider": "parasail/fp8",
+        "extra_body": {
+            "provider": {
+                "order": ["parasail/fp8"],
+                "allow_fallbacks": False,
+                "require_parameters": True,
+            },
+        },
     },
 }
 
@@ -200,6 +207,7 @@ def call_one(
             choice = response.choices[0]
             raw = choice.message.content or ""
             usage = response.usage
+            response_payload = response.model_dump(mode="json")
             payload = _object_dict(choice.logprobs)
             logprob_record = {
                 "run_id": job["run_id"],
@@ -208,6 +216,7 @@ def call_one(
                 "context": job["context"],
                 "order": job["order"],
                 "rep": job["rep"],
+                "upstream_provider": response_payload.get("provider"),
                 **_extract_target_logprobs(payload),
             }
             return (
@@ -294,6 +303,7 @@ def main() -> None:
             "top_p": None,
             "seed_start": args.seed,
             "top_logprobs_requested": provider["top_logprobs"],
+            "upstream_provider_requested": provider.get("upstream_provider"),
         }
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
